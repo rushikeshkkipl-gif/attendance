@@ -21,14 +21,15 @@
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
 
-  const todayKey = "attendance_done_" + new Date().toISOString().split("T")[0];
+ const TEST_MODE = true; // 🔁 set false when live
 
-  // 🚫 Block duplicate submission on same phone
-  if (localStorage.getItem(todayKey)) {
-    document.body.innerHTML =
-      "<h2 style='text-align:center'>✅ Attendance already marked</h2>";
-    throw new Error("Already marked");
-  }
+const todayKey = "attendance_done_" + new Date().toISOString().split("T")[0];
+
+if (!TEST_MODE && localStorage.getItem(todayKey)) {
+  document.body.innerHTML =
+    "<h2 style='text-align:center'>✅ Attendance already marked</h2>";
+  throw new Error("Already marked");
+} 
 
   document.getElementById("form").onsubmit = function(e) {
     e.preventDefault();
