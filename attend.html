@@ -21,21 +21,32 @@
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
 
- const TEST_MODE = true; // 🔁 set false when live
+  // 🔁 TEST MODE (true = unlimited testing)
+  const TEST_MODE = true; // set to false when live
 
-const todayKey = "attendance_done_" + new Date().toISOString().split("T")[0];
+  // 🚫 Block direct access (must come via QR)
+  if (!token) {
+    document.body.innerHTML =
+      "<h2 style='text-align:center'>❌ Attendance Closed</h2>";
+    throw new Error("No token");
+  }
 
-if (!TEST_MODE && localStorage.getItem(todayKey)) {
-  document.body.innerHTML =
-    "<h2 style='text-align:center'>✅ Attendance already marked</h2>";
-  throw new Error("Already marked");
-} 
+  const todayKey = "attendance_done_" + new Date().toISOString().split("T")[0];
+
+  // 🚫 Block duplicate only when NOT testing
+  if (!TEST_MODE && localStorage.getItem(todayKey)) {
+    document.body.innerHTML =
+      "<h2 style='text-align:center'>✅ Attendance already marked</h2>";
+    throw new Error("Already marked");
+  }
 
   document.getElementById("form").onsubmit = function(e) {
     e.preventDefault();
 
-    const name = document.getElementById("name").value;
-    const date = new Date().toLocaleDateString();
+    const name = document.getElementById("name").value.trim();
+    if (!name) return;
+
+    const date = new Date().toLocaleDateString("en-GB"); // dd/mm/yyyy
     const time = new Date().toLocaleTimeString();
 
     const url =
@@ -47,15 +58,20 @@ if (!TEST_MODE && localStorage.getItem(todayKey)) {
     fetch(url)
       .then(res => res.text())
       .then(text => {
-  if (text === "SUCCESS") {
-    document.getElementById("msg").innerText =
-      "✅ Attendance marked successfully!";
-    localStorage.setItem(todayKey, "true");
-  } else {
-    document.getElementById("msg").innerText =
-      "❌ Error: " + text;
-  }
-}) 
+        if (text === "SUCCESS") {
+          document.getElementById("msg").innerText =
+            "✅ Attendance marked successfully!";
+
+          // Save only in LIVE mode
+          if (!TEST_MODE) {
+            localStorage.setItem(todayKey, "true");
+          }
+
+        } else {
+          document.getElementById("msg").innerText =
+            "❌ Error: " + text;
+        }
+      })
       .catch(() => {
         document.getElementById("msg").innerText =
           "❌ Network error";
