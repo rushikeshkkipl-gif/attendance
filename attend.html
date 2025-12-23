@@ -21,9 +21,13 @@
   const params = new URLSearchParams(window.location.search);
   const token = params.get("token");
 
-  if (!token) {
-    document.body.innerHTML = "<h2>Attendance Closed</h2>";
-    throw new Error("No token");
+  const todayKey = "attendance_done_" + new Date().toISOString().split("T")[0];
+
+  // 🚫 Block duplicate submission on same phone
+  if (localStorage.getItem(todayKey)) {
+    document.body.innerHTML =
+      "<h2 style='text-align:center'>✅ Attendance already marked</h2>";
+    throw new Error("Already marked");
   }
 
   document.getElementById("form").onsubmit = function(e) {
@@ -42,14 +46,15 @@
     fetch(url)
       .then(res => res.text())
       .then(text => {
-        if (text === "SUCCESS") {
-          document.getElementById("msg").innerText =
-            "✅ Attendance marked successfully!";
-        } else {
-          document.getElementById("msg").innerText =
-            "❌ Error: " + text;
-        }
-      })
+  if (text === "SUCCESS") {
+    document.getElementById("msg").innerText =
+      "✅ Attendance marked successfully!";
+    localStorage.setItem(todayKey, "true");
+  } else {
+    document.getElementById("msg").innerText =
+      "❌ Error: " + text;
+  }
+}) 
       .catch(() => {
         document.getElementById("msg").innerText =
           "❌ Network error";
