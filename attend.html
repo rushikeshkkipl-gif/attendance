@@ -15,6 +15,7 @@
   </form>
 
   <p id="msg"></p>
+  <p id="debug" style="font-size:12px;color:#555;word-break:break-all;"></p>
 </div>
 
 <script>
@@ -44,7 +45,10 @@
     e.preventDefault();
 
     const name = document.getElementById("name").value.trim();
-    if (!name) return;
+    if (!name) {
+      document.getElementById("msg").innerText = "❌ Please enter your name";
+      return;
+    }
 
     const date = new Date().toLocaleDateString("en-GB"); // dd/mm/yyyy
     const time = new Date().toLocaleTimeString();
@@ -55,26 +59,32 @@
       "&date=" + encodeURIComponent(date) +
       "&time=" + encodeURIComponent(time);
 
+    // 🔍 show URL for confirmation
+    document.getElementById("debug").innerText = "Request URL: " + url;
+
     fetch(url)
       .then(res => res.text())
       .then(text => {
+        // 🔍 ALWAYS show server response
+        document.getElementById("debug").innerText +=
+          "\nServer response: " + text;
+
         if (text === "SUCCESS") {
           document.getElementById("msg").innerText =
             "✅ Attendance marked successfully!";
 
-          // Save only in LIVE mode
           if (!TEST_MODE) {
             localStorage.setItem(todayKey, "true");
           }
-
         } else {
           document.getElementById("msg").innerText =
-            "❌ Error: " + text;
+            "❌ Server error (see debug below)";
         }
       })
-      .catch(() => {
+      .catch(err => {
         document.getElementById("msg").innerText =
           "❌ Network error";
+        document.getElementById("debug").innerText = err.toString();
       });
   };
 </script>
